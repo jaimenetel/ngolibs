@@ -3,12 +3,13 @@ package jwttools
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var SUPER_SECRET_KEY = "64ece9a47243209e7f8739bde3ff17b4ea815c777fe0a4bdfadb889db9900340"
+var SUPER_SECRET_KEY = ""
 
 func getUserName(tokenString string) (string, error) {
 	if tokenString == "" {
@@ -211,4 +212,13 @@ func contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func init() {
+	value := os.Getenv("VARTOKEN")
+	if value == "" {
+		fmt.Println("T K NOT FOUND")
+	} else {
+		SUPER_SECRET_KEY = value
+	}
 }
