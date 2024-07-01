@@ -12,6 +12,7 @@ import (
 	jwttools "github.com/jaimenetel/ngolibs/jwttools"
 )
 
+// inmersion
 type TinTemas map[string]struct{}
 
 type Roles []string
