@@ -24,9 +24,14 @@ type QParamsAny []string
 type ApiKey []bool
 type LogUse []bool
 type StringFunc func(string)
+type CheckFunc func(string) bool
 
 type SaveLogFunc struct {
 	Func StringFunc
+}
+
+type CheckApiFunc struct {
+	Func CheckFunc
 }
 type Container struct {
 	Elementos []interface{}
@@ -47,6 +52,7 @@ type Endpoint struct {
 	inQParamsAll TinTemas
 	inQParamsAny TinTemas
 	SaveLog      SaveLogFunc
+	CheckApi     CheckApiFunc
 	SinRoles     bool
 	ApiKey       bool
 	LogUse       bool
@@ -96,6 +102,8 @@ func ProcessParametros(params []interface{}) Container {
 	UnContainer := Container{}
 	for _, param := range params {
 		switch p := param.(type) {
+		case CheckApiFunc:
+			UnContainer.Elementos = append(UnContainer.Elementos, p)
 		case SaveLogFunc:
 			UnContainer.Elementos = append(UnContainer.Elementos, p)
 		case LogUse:
@@ -142,9 +150,14 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 	var epApiKey = false
 	var epLogUse = false
 	var epSaveLogFunc = SaveLogFunc{}
+	var epCheckApiFunc = CheckApiFunc{}
 	AContainer := ProcessParametros(params)
 	for _, param := range AContainer.Elementos {
 		switch p := param.(type) {
+		case CheckApiFunc:
+			fmt.Println("Es un CheckApiFunc")
+			epCheckApiFunc = p
+
 		case SaveLogFunc:
 			fmt.Println("Es un SaveLogFunc")
 			epSaveLogFunc = p
@@ -228,6 +241,7 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 		ApiKey:       epApiKey,
 		LogUse:       epLogUse,
 		SaveLog:      epSaveLogFunc,
+		CheckApi:     epCheckApiFunc,
 	}
 
 	lt.Endpoints = append(lt.Endpoints, endpoint)
@@ -284,10 +298,13 @@ func CheckStringSliceInTemas(slice []string, temas TinTemas) (bool, string) {
 	}
 	return false, ""
 }
-func CheckAPIKey(r *http.Request) bool {
+func (ep *Endpoint) CheckAPIKey(r *http.Request) bool {
 	apiKey := r.Header.Get("X-API-KEY")
 	if apiKey != "" {
-		//gestion del apikey
+		if ep.CheckApi.Func != nil {
+			return ep.CheckApi.Func("API Key: " + apiKey)
+		}
+
 		return true
 	}
 	return false
@@ -316,8 +333,8 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 		//imprimirDatosSolicitud(w, r)
 		fmt.Println("tras solicitud", TinTemasToString(ep.inRoles))
 		if ep.ApiKey {
-			if !CheckAPIKey(r) {
-				RespondWithError(w, http.StatusUnauthorized, "API Key no proporcionado")
+			if !ep.CheckAPIKey(r) {
+				RespondWithError(w, http.StatusUnauthorized, "API Key no proporcionado o no autorizado")
 				return
 			}
 		}
