@@ -11,6 +11,16 @@ import (
 
 var SUPER_SECRET_KEY = ""
 
+func GetSecretKey() string {
+
+	value := os.Getenv("VARTOKEN")
+	if value == "" {
+		fmt.Println("T K NOT FOUND")
+	}
+	fmt.Println("T K FOUND", value)
+	return value
+
+}
 func getUserName(tokenString string) (string, error) {
 	if tokenString == "" {
 		return "", nil
@@ -22,7 +32,7 @@ func getUserName(tokenString string) (string, error) {
 
 	// Definir la clave secreta
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
-		return []byte(SUPER_SECRET_KEY), nil
+		return []byte(GetSecretKey()), nil
 	}
 
 	// Parsear y validar el token
@@ -51,7 +61,7 @@ func DecodificarJWT2(tokenString string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(SUPER_SECRET_KEY), nil
+		return []byte(GetSecretKey()), nil
 	})
 
 	if err != nil {
@@ -215,10 +225,5 @@ func contains(slice []string, item string) bool {
 }
 
 func init() {
-	value := os.Getenv("VARTOKEN")
-	if value == "" {
-		fmt.Println("T K NOT FOUND")
-	} else {
-		SUPER_SECRET_KEY = value
-	}
+
 }
