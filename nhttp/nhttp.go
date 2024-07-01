@@ -27,11 +27,13 @@ type StringFunc func(string)
 type CheckFunc func(string) bool
 
 type SaveLogFunc struct {
-	Func StringFunc
+	Funcname string     `json:"funcname"`
+	Func     StringFunc `json:"-"`
 }
 
 type CheckApiFunc struct {
-	Func CheckFunc
+	Funcname string    `json:"funcname"`
+	Func     CheckFunc `json:"-"`
 }
 type Container struct {
 	Elementos []interface{}
