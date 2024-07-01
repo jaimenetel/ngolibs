@@ -52,25 +52,7 @@ func Initialize() {
 	})
 }
 
-// Ejemplo de funciones init para registrar.
-func initFunction1() {
-	fmt.Println("Inicializando función 1 con prioridad 2")
-}
-
-func initFunction2() {
-	fmt.Println("Inicializando función 2 con prioridad 1")
-}
-
-func initFunction3() {
-	fmt.Println("Inicializando función 3 con prioridad 1000")
-}
-
-// init se usa para registrar las funciones de inicialización.
-func init() {
-	RegisterInitFunc(initFunction1, 2)
-	RegisterInitFunc(initFunction2, 1)
-	RegisterInitFunc(initFunction3, 1000)
-}
+// IniterSample es una función de ejemplo que muestra cómo usar el paquete initer.
 
 func IniterSample() {
 	fmt.Println("Ejecutando inicialización por primera vez:")
