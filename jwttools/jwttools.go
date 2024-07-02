@@ -81,6 +81,26 @@ func DecodificarJWT2(tokenString string) (jwt.MapClaims, error) {
 	fmt.Println(claims)
 	return claims, nil
 }
+func GetExpirationTime(token string) int64 {
+	myClaims, err := DecodificarJWT2(token)
+	if err != nil {
+		fmt.Println("Error al decodificar el token:", err)
+	}
+	if parts, ok := myClaims["exp"].(float64); ok {
+		return int64(parts)
+	}
+	return 0
+}
+func GetExpirationTimeAsString(token string) string {
+	myClaims, err := DecodificarJWT2(token)
+	if err != nil {
+		fmt.Println("Error al decodificar el token:", err)
+	}
+	if parts, ok := myClaims["exp"].(float64); ok {
+		return fmt.Sprintf("%v", parts)
+	}
+	return ""
+}
 func GetUserFromBearerToken(token string) string {
 	// Split the token by the space character
 	//name, _ := getUserName(token)
