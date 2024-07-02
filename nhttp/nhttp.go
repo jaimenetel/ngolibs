@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -136,7 +137,7 @@ func ProcessParametros(params []interface{}) Container {
 
 	return UnContainer
 }
-func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...interface{}) {
+func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...interface{}) Endpoint {
 
 	epRoles := Roles{}
 	epAntiRoles := AntiRoles{}
@@ -159,10 +160,11 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 		case CheckApiFunc:
 			fmt.Println("Es un CheckApiFunc")
 			epCheckApiFunc = p
-
+			epCheckApiFunc.Funcname = runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
 		case SaveLogFunc:
 			fmt.Println("Es un SaveLogFunc")
 			epSaveLogFunc = p
+			epSaveLogFunc.Funcname = "SaveLog"
 		case LogUse:
 			if len(param.(LogUse)) > 0 {
 				epLogUse = p[0]
@@ -247,6 +249,7 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 	}
 
 	lt.Endpoints = append(lt.Endpoints, endpoint)
+	return endpoint
 }
 func (lt *Nthttp) Start() {
 	for _, endpoint := range lt.Endpoints {
