@@ -36,28 +36,28 @@ type CheckApiFunc struct {
 	Func     CheckFunc `json:"-"`
 }
 type Container struct {
-	Elementos []interface{}
+	Elementos []interface{} `json:"elementos"`
 }
 
 type Endpoint struct {
-	Name         string
-	Handler      http.HandlerFunc
-	Controller   string
-	Roles        Roles
-	AntiRoles    AntiRoles
-	QParamsAll   QParamsAll
-	QParamsAny   QParamsAny
-	Methods      Methods
-	inMethods    TinTemas
-	inRoles      TinTemas
-	inAntiRoles  TinTemas
-	inQParamsAll TinTemas
-	inQParamsAny TinTemas
-	SaveLog      SaveLogFunc
-	CheckApi     CheckApiFunc
-	SinRoles     bool
-	ApiKey       bool
-	LogUse       bool
+	Name         string           `json:"endpointname"`
+	Handler      http.HandlerFunc `json:"-"`
+	Controller   string           `json:"controller"`
+	Roles        Roles            `json:"roles"`
+	AntiRoles    AntiRoles        `json:"antiroles"`
+	QParamsAll   QParamsAll       `json:"qparamsall"`
+	QParamsAny   QParamsAny       `json:"qparamsany"`
+	Methods      Methods          `json:"methods"`
+	InMethods    TinTemas         `json:"inmethods"`
+	InRoles      TinTemas         `json:"inroles"`
+	InAntiRoles  TinTemas         `json:"inantiroles"`
+	InQParamsAll TinTemas         `json:"inqparamsall"`
+	InQParamsAny TinTemas         `json:"inqparamsany"`
+	SaveLog      SaveLogFunc      `json:"savelog"`
+	CheckApi     CheckApiFunc     `json:"checkapi"`
+	SinRoles     bool             `json:"sinroles"`
+	ApiKey       bool             `json:"apikey"`
+	LogUse       bool             `json:"loguse"`
 }
 
 func TinTemasToString(tin TinTemas) string {
@@ -234,11 +234,11 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 		QParamsAll:   epQParamsAll,
 		QParamsAny:   epQParamsAny,
 		Methods:      epMethods,
-		inMethods:    tinMethods,
-		inRoles:      tinRoles,
-		inAntiRoles:  tinAntiRoles,
-		inQParamsAll: tinQParamsAll,
-		inQParamsAny: tinQParamsAny,
+		InMethods:    tinMethods,
+		InRoles:      tinRoles,
+		InAntiRoles:  tinAntiRoles,
+		InQParamsAll: tinQParamsAll,
+		InQParamsAny: tinQParamsAny,
 		SinRoles:     epSinRoles,
 		ApiKey:       epApiKey,
 		LogUse:       epLogUse,
@@ -255,7 +255,7 @@ func (lt *Nthttp) Start() {
 		// Envuelve el handler original con los middlewares de auth y log, y luego con el CORS middleware
 		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.Handler, endpoint))
 
-		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.inMethods)
+		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.InMethods)
 
 		http.Handle(endpoint.Name, handlerWithMiddleware)
 	}
@@ -333,7 +333,7 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 
 		bearer_string := "Bearer"
 		//imprimirDatosSolicitud(w, r)
-		fmt.Println("tras solicitud", TinTemasToString(ep.inRoles))
+		fmt.Println("tras solicitud", TinTemasToString(ep.InRoles))
 		if ep.ApiKey {
 			if !ep.CheckAPIKey(r) {
 				RespondWithError(w, http.StatusUnauthorized, "API Key no proporcionado o no autorizado")
@@ -368,8 +368,8 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 			role := myClaims["role"].(string)
 			roles := strings.Split(role, ",")
 			fmt.Println("Roles: ", role)
-			pongoRoles, cualpone := CheckStringSliceInTemas(roles, ep.inRoles)
-			quitoRoles, cualquita := CheckStringSliceInTemas(roles, ep.inAntiRoles)
+			pongoRoles, cualpone := CheckStringSliceInTemas(roles, ep.InRoles)
+			quitoRoles, cualquita := CheckStringSliceInTemas(roles, ep.InAntiRoles)
 			if quitoRoles {
 				RespondWithError(w, http.StatusForbidden, "Acceso no autorizado por "+cualquita)
 				return
@@ -381,10 +381,10 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 
 			fmt.Println("tenemos roles", cualpone)
 
-			if len(ep.inQParamsAll) > 0 {
+			if len(ep.InQParamsAll) > 0 {
 				fmt.Println("QParamsAll")
 				// Verificar que todos los parámetros estén presentes
-				for param := range ep.inQParamsAll {
+				for param := range ep.InQParamsAll {
 					apar := r.URL.Query().Get(param)
 					if apar == "" {
 						RespondWithError(w, http.StatusBadRequest, "Falta el parámetro "+param)
@@ -393,10 +393,10 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 				}
 			}
 			tenemosparams := false
-			if len(ep.inQParamsAny) > 0 {
+			if len(ep.InQParamsAny) > 0 {
 				fmt.Println("QParamsAny")
 				// Verificar que al menos uno de los parámetros esté presente
-				for param := range ep.inQParamsAny {
+				for param := range ep.InQParamsAny {
 					if r.FormValue(param) != "" {
 						tenemosparams = true
 						break
