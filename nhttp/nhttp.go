@@ -27,6 +27,11 @@ type LogUse []bool
 type StringFunc func(string)
 type CheckFunc func(string) bool
 
+type MyHandlerFunc struct {
+	Funcname string           `json:"funcname"`
+	Func     http.HandlerFunc `json:"-"`
+}
+
 type SaveLogFunc struct {
 	Funcname string     `json:"funcname"`
 	Func     StringFunc `json:"-"`
@@ -41,24 +46,24 @@ type Container struct {
 }
 
 type Endpoint struct {
-	Name         string           `json:"endpointname"`
-	Handler      http.HandlerFunc `json:"-"`
-	Controller   string           `json:"controller"`
-	Roles        Roles            `json:"roles"`
-	AntiRoles    AntiRoles        `json:"antiroles"`
-	QParamsAll   QParamsAll       `json:"qparamsall"`
-	QParamsAny   QParamsAny       `json:"qparamsany"`
-	Methods      Methods          `json:"methods"`
-	InMethods    TinTemas         `json:"inmethods"`
-	InRoles      TinTemas         `json:"inroles"`
-	InAntiRoles  TinTemas         `json:"inantiroles"`
-	InQParamsAll TinTemas         `json:"inqparamsall"`
-	InQParamsAny TinTemas         `json:"inqparamsany"`
-	SaveLog      SaveLogFunc      `json:"savelog"`
-	CheckApi     CheckApiFunc     `json:"checkapi"`
-	SinRoles     bool             `json:"sinroles"`
-	ApiKey       bool             `json:"apikey"`
-	LogUse       bool             `json:"loguse"`
+	Name         string        `json:"endpointname"`
+	MyHandler    MyHandlerFunc `json:"handler"`
+	Controller   string        `json:"controller"`
+	Roles        Roles         `json:"roles"`
+	AntiRoles    AntiRoles     `json:"antiroles"`
+	QParamsAll   QParamsAll    `json:"qparamsall"`
+	QParamsAny   QParamsAny    `json:"qparamsany"`
+	Methods      Methods       `json:"methods"`
+	InMethods    TinTemas      `json:"inmethods"`
+	InRoles      TinTemas      `json:"inroles"`
+	InAntiRoles  TinTemas      `json:"inantiroles"`
+	InQParamsAll TinTemas      `json:"inqparamsall"`
+	InQParamsAny TinTemas      `json:"inqparamsany"`
+	SaveLog      SaveLogFunc   `json:"savelog"`
+	CheckApi     CheckApiFunc  `json:"checkapi"`
+	SinRoles     bool          `json:"sinroles"`
+	ApiKey       bool          `json:"apikey"`
+	LogUse       bool          `json:"loguse"`
 }
 
 func TinTemasToString(tin TinTemas) string {
@@ -152,19 +157,24 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 	var epSinRoles = false
 	var epApiKey = false
 	var epLogUse = false
-	var epSaveLogFunc = SaveLogFunc{}
-	var epCheckApiFunc = CheckApiFunc{}
+	var epSaveLogFunc = SaveLogFunc{Funcname: "No activo", Func: nil}
+	var epCheckApiFunc = CheckApiFunc{Funcname: "No activo", Func: nil}
+	var epHandlerFunc = MyHandlerFunc{Funcname: runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), Func: handler}
 	AContainer := ProcessParametros(params)
 	for _, param := range AContainer.Elementos {
 		switch p := param.(type) {
 		case CheckApiFunc:
 			fmt.Println("Es un CheckApiFunc")
-			epCheckApiFunc = p
-			epCheckApiFunc.Funcname = runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
+			//epCheckApiFunc = p
+			afunc := p.Func
+			aname := runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
+			fmt.Println("Nombre de la función: ", aname)
+			epCheckApiFunc = CheckApiFunc{Funcname: aname, Func: afunc}
 		case SaveLogFunc:
 			fmt.Println("Es un SaveLogFunc")
-			epSaveLogFunc = p
-			epSaveLogFunc.Funcname = "SaveLog"
+			afunc := p.Func
+			aname := runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
+			epSaveLogFunc = SaveLogFunc{Funcname: aname, Func: afunc}
 		case LogUse:
 			if len(param.(LogUse)) > 0 {
 				epLogUse = p[0]
@@ -230,7 +240,7 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 
 	endpoint := Endpoint{
 		Name:         name,
-		Handler:      handler,
+		MyHandler:    epHandlerFunc,
 		Roles:        epRoles,
 		AntiRoles:    epAntiRoles,
 		QParamsAll:   epQParamsAll,
@@ -256,7 +266,7 @@ func (lt *Nthttp) Start() {
 		fmt.Println("Startr del endpoint: ", endpoint)
 
 		// Envuelve el handler original con los middlewares de auth y log, y luego con el CORS middleware
-		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.Handler, endpoint))
+		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.MyHandler.Func, endpoint))
 
 		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.InMethods)
 
@@ -451,12 +461,4 @@ func imprimirDatosSolicitud(r *http.Request) string {
 		}
 	}
 	return stbuilder.String()
-}
-func toJSON(datos any) string {
-	jsonData, err := json.MarshalIndent(datos, "", "  ")
-	if err != nil {
-		fmt.Print("Error al serializar a JSON: ", err)
-		return ""
-	}
-	return string(jsonData)
 }
