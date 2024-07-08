@@ -5,11 +5,53 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 )
 
-var URLgetIp string = "http://172.17.0.56:8701/findip?find=%s"
-var URLgetLtm string = "http://172.17.0.56:8701/findltm?find=%s"
-var URLgetDisp string = "http://172.17.0.56:8701/finddispositivo?find=%s"
+type FinderConnect struct {
+	ServerAddress string
+	URLgetIp      string
+	URLgetLtm     string
+	URLgetDisp    string
+}
+
+var (
+	fcinstance   *FinderConnect
+	fconce       sync.Once
+	defaultURL   = "http://172.17.0.56:8701"
+	defaultPaths = map[string]string{
+		"URLgetIp":   "/findip?find=%s",
+		"URLgetLtm":  "/findltm?find=%s",
+		"URLgetDisp": "/finddispositivo?find=%s",
+	}
+)
+
+func makeFinderConnect(serverAddress string) FinderConnect {
+
+	return FinderConnect{
+		ServerAddress: serverAddress,
+		URLgetIp:      serverAddress + defaultPaths["URLgetIp"],
+		URLgetLtm:     serverAddress + defaultPaths["URLgetLtm"],
+		URLgetDisp:    serverAddress + defaultPaths["URLgetDisp"],
+	}
+}
+func GetFinderConnect(serveraddress string) *FinderConnect {
+	fconce.Do(func() {
+		unaurl := defaultURL
+		if serveraddress != "" {
+			unaurl = serveraddress
+
+		}
+		apalo := makeFinderConnect(unaurl)
+		fcinstance = &apalo
+
+	})
+	return fcinstance
+}
+
+// var aURLgetIp string = "http://172.17.0.56:8701/findip?find=%s"
+// var aURLgetLtm string = "http://172.17.0.56:8701/findltm?find=%s"
+// var aURLgetDisp string = "http://172.17.0.56:8701/finddispositivo?find=%s"
 
 type Findiccid struct {
 	Iccid  string `gorm:"column:iccid"`
@@ -55,8 +97,8 @@ func FetchURL(url string) (string, error) {
 	return string(body), nil
 }
 
-func GetIp(find string) (string, error) {
-	URL := fmt.Sprintf(URLgetIp, find)
+func (fc *FinderConnect) GetIp(find string) (string, error) {
+	URL := fmt.Sprintf(fc.URLgetIp, find)
 	result, err := FetchURL(URL)
 	if err != nil {
 		return "", err
@@ -64,8 +106,8 @@ func GetIp(find string) (string, error) {
 	return result, nil
 }
 
-func GetLTM(find string) ([]Findiccid, error) {
-	URL := fmt.Sprintf(URLgetLtm, find)
+func (fc *FinderConnect) GetLTM(find string) ([]Findiccid, error) {
+	URL := fmt.Sprintf(fc.URLgetLtm, find)
 	result, err := FetchURL(URL)
 	if err != nil {
 		return []Findiccid{}, err
@@ -79,8 +121,8 @@ func GetLTM(find string) ([]Findiccid, error) {
 	}
 	return resti, nil
 }
-func GetDisp(find string) (Dispositivo, error) {
-	URL := fmt.Sprintf(URLgetDisp, find)
+func (fc *FinderConnect) GetDisp(find string) (Dispositivo, error) {
+	URL := fmt.Sprintf(fc.URLgetDisp, find)
 	result, err := FetchURL(URL)
 	if err != nil {
 		return Dispositivo{}, err
