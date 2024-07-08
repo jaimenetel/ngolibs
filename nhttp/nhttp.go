@@ -1,19 +1,17 @@
-package nhtttp
+package nhttp
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
-	jwttools "github.com/jaimenetel/ngolibs/jwttools"
+	"github.com/jaimenetel/ngolibs/jwttools"
 )
 
-// inmersion
 type TinTemas map[string]struct{}
 
 type Roles []string
@@ -25,45 +23,32 @@ type QParamsAny []string
 type ApiKey []bool
 type LogUse []bool
 type StringFunc func(string)
-type CheckFunc func(string) bool
-
-type MyHandlerFunc struct {
-	Funcname string           `json:"funcname"`
-	Func     http.HandlerFunc `json:"-"`
-}
 
 type SaveLogFunc struct {
-	Funcname string     `json:"funcname"`
-	Func     StringFunc `json:"-"`
-}
-
-type CheckApiFunc struct {
-	Funcname string    `json:"funcname"`
-	Func     CheckFunc `json:"-"`
+	Func StringFunc
 }
 type Container struct {
-	Elementos []interface{} `json:"elementos"`
+	Elementos []interface{}
 }
 
 type Endpoint struct {
-	Name         string        `json:"endpointname"`
-	MyHandler    MyHandlerFunc `json:"handler"`
-	Controller   string        `json:"controller"`
-	Roles        Roles         `json:"roles"`
-	AntiRoles    AntiRoles     `json:"antiroles"`
-	QParamsAll   QParamsAll    `json:"qparamsall"`
-	QParamsAny   QParamsAny    `json:"qparamsany"`
-	Methods      Methods       `json:"methods"`
-	InMethods    TinTemas      `json:"inmethods"`
-	InRoles      TinTemas      `json:"inroles"`
-	InAntiRoles  TinTemas      `json:"inantiroles"`
-	InQParamsAll TinTemas      `json:"inqparamsall"`
-	InQParamsAny TinTemas      `json:"inqparamsany"`
-	SaveLog      SaveLogFunc   `json:"savelog"`
-	CheckApi     CheckApiFunc  `json:"checkapi"`
-	SinRoles     bool          `json:"sinroles"`
-	ApiKey       bool          `json:"apikey"`
-	LogUse       bool          `json:"loguse"`
+	Name         string
+	Handler      http.HandlerFunc
+	Controller   string
+	Roles        Roles
+	AntiRoles    AntiRoles
+	QParamsAll   QParamsAll
+	QParamsAny   QParamsAny
+	Methods      Methods
+	inMethods    TinTemas
+	inRoles      TinTemas
+	inAntiRoles  TinTemas
+	inQParamsAll TinTemas
+	inQParamsAny TinTemas
+	SaveLog      SaveLogFunc
+	SinRoles     bool
+	ApiKey       bool
+	LogUse       bool
 }
 
 func TinTemasToString(tin TinTemas) string {
@@ -110,8 +95,6 @@ func ProcessParametros(params []interface{}) Container {
 	UnContainer := Container{}
 	for _, param := range params {
 		switch p := param.(type) {
-		case CheckApiFunc:
-			UnContainer.Elementos = append(UnContainer.Elementos, p)
 		case SaveLogFunc:
 			UnContainer.Elementos = append(UnContainer.Elementos, p)
 		case LogUse:
@@ -142,7 +125,7 @@ func ProcessParametros(params []interface{}) Container {
 
 	return UnContainer
 }
-func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...interface{}) Endpoint {
+func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...interface{}) {
 
 	epRoles := Roles{}
 	epAntiRoles := AntiRoles{}
@@ -157,24 +140,13 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 	var epSinRoles = false
 	var epApiKey = false
 	var epLogUse = false
-	var epSaveLogFunc = SaveLogFunc{Funcname: "No activo", Func: nil}
-	var epCheckApiFunc = CheckApiFunc{Funcname: "No activo", Func: nil}
-	var epHandlerFunc = MyHandlerFunc{Funcname: runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name(), Func: handler}
+	var epSaveLogFunc = SaveLogFunc{}
 	AContainer := ProcessParametros(params)
 	for _, param := range AContainer.Elementos {
 		switch p := param.(type) {
-		case CheckApiFunc:
-			fmt.Println("Es un CheckApiFunc")
-			//epCheckApiFunc = p
-			afunc := p.Func
-			aname := runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
-			fmt.Println("Nombre de la función: ", aname)
-			epCheckApiFunc = CheckApiFunc{Funcname: aname, Func: afunc}
 		case SaveLogFunc:
 			fmt.Println("Es un SaveLogFunc")
-			afunc := p.Func
-			aname := runtime.FuncForPC(reflect.ValueOf(p.Func).Pointer()).Name()
-			epSaveLogFunc = SaveLogFunc{Funcname: aname, Func: afunc}
+			epSaveLogFunc = p
 		case LogUse:
 			if len(param.(LogUse)) > 0 {
 				epLogUse = p[0]
@@ -240,37 +212,37 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 
 	endpoint := Endpoint{
 		Name:         name,
-		MyHandler:    epHandlerFunc,
+		Handler:      handler,
 		Roles:        epRoles,
 		AntiRoles:    epAntiRoles,
 		QParamsAll:   epQParamsAll,
 		QParamsAny:   epQParamsAny,
 		Methods:      epMethods,
-		InMethods:    tinMethods,
-		InRoles:      tinRoles,
-		InAntiRoles:  tinAntiRoles,
-		InQParamsAll: tinQParamsAll,
-		InQParamsAny: tinQParamsAny,
+		inMethods:    tinMethods,
+		inRoles:      tinRoles,
+		inAntiRoles:  tinAntiRoles,
+		inQParamsAll: tinQParamsAll,
+		inQParamsAny: tinQParamsAny,
 		SinRoles:     epSinRoles,
 		ApiKey:       epApiKey,
 		LogUse:       epLogUse,
 		SaveLog:      epSaveLogFunc,
-		CheckApi:     epCheckApiFunc,
 	}
 
 	lt.Endpoints = append(lt.Endpoints, endpoint)
-	return endpoint
 }
 func (lt *Nthttp) Start() {
+	mux := GetCustomMux()
 	for _, endpoint := range lt.Endpoints {
-		fmt.Println("Startr del endpoint: ", endpoint)
+		fmt.Println("Startr takatiki del endpoint: ", endpoint)
 
 		// Envuelve el handler original con los middlewares de auth y log, y luego con el CORS middleware
-		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.MyHandler.Func, endpoint))
+		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.Handler, endpoint))
 
-		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.InMethods)
+		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.inMethods)
 
-		http.Handle(endpoint.Name, handlerWithMiddleware)
+		mux.Handle(endpoint.Name, handlerWithMiddleware)
+
 	}
 }
 func ConfigMethodType(next http.Handler, methods TinTemas) http.Handler {
@@ -313,13 +285,10 @@ func CheckStringSliceInTemas(slice []string, temas TinTemas) (bool, string) {
 	}
 	return false, ""
 }
-func (ep *Endpoint) CheckAPIKey(r *http.Request) bool {
+func CheckAPIKey(r *http.Request) bool {
 	apiKey := r.Header.Get("X-API-KEY")
 	if apiKey != "" {
-		if ep.CheckApi.Func != nil {
-			return ep.CheckApi.Func("API Key: " + apiKey)
-		}
-
+		//gestion del apikey
 		return true
 	}
 	return false
@@ -346,10 +315,10 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 
 		bearer_string := "Bearer"
 		//imprimirDatosSolicitud(w, r)
-		fmt.Println("tras solicitud", TinTemasToString(ep.InRoles))
+		fmt.Println("tras solicitud", TinTemasToString(ep.inRoles))
 		if ep.ApiKey {
-			if !ep.CheckAPIKey(r) {
-				RespondWithError(w, http.StatusUnauthorized, "API Key no proporcionado o no autorizado")
+			if !CheckAPIKey(r) {
+				RespondWithError(w, http.StatusUnauthorized, "API Key no proporcionado")
 				return
 			}
 		}
@@ -381,8 +350,8 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 			role := myClaims["role"].(string)
 			roles := strings.Split(role, ",")
 			fmt.Println("Roles: ", role)
-			pongoRoles, cualpone := CheckStringSliceInTemas(roles, ep.InRoles)
-			quitoRoles, cualquita := CheckStringSliceInTemas(roles, ep.InAntiRoles)
+			pongoRoles, cualpone := CheckStringSliceInTemas(roles, ep.inRoles)
+			quitoRoles, cualquita := CheckStringSliceInTemas(roles, ep.inAntiRoles)
 			if quitoRoles {
 				RespondWithError(w, http.StatusForbidden, "Acceso no autorizado por "+cualquita)
 				return
@@ -394,10 +363,10 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 
 			fmt.Println("tenemos roles", cualpone)
 
-			if len(ep.InQParamsAll) > 0 {
+			if len(ep.inQParamsAll) > 0 {
 				fmt.Println("QParamsAll")
 				// Verificar que todos los parámetros estén presentes
-				for param := range ep.InQParamsAll {
+				for param := range ep.inQParamsAll {
 					apar := r.URL.Query().Get(param)
 					if apar == "" {
 						RespondWithError(w, http.StatusBadRequest, "Falta el parámetro "+param)
@@ -406,10 +375,10 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 				}
 			}
 			tenemosparams := false
-			if len(ep.InQParamsAny) > 0 {
+			if len(ep.inQParamsAny) > 0 {
 				fmt.Println("QParamsAny")
 				// Verificar que al menos uno de los parámetros esté presente
-				for param := range ep.InQParamsAny {
+				for param := range ep.inQParamsAny {
 					if r.FormValue(param) != "" {
 						tenemosparams = true
 						break
@@ -423,6 +392,7 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 			DoLogUse(next, ep).ServeHTTP(w, r)
 			//next.ServeHTTP(w, r)
 		}
+
 	})
 }
 func imprimirDatosSolicitud(r *http.Request) string {
