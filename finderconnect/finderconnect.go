@@ -13,6 +13,7 @@ type FinderConnect struct {
 	URLgetIp      string
 	URLgetLtm     string
 	URLgetDisp    string
+	URLLineas     string
 }
 
 var (
@@ -23,8 +24,24 @@ var (
 		"URLgetIp":   "/findip?find=%s",
 		"URLgetLtm":  "/findltm?find=%s",
 		"URLgetDisp": "/finddispositivo?find=%s",
+		"URLLineas":  "/lineas?imei=%s&userowner",
 	}
 )
+
+type LineaVerificaciones struct {
+	Telefono  *string `json:"telefono"`
+	ICCID     *string `json:"iccid"`
+	IMEI      *string `json:"imei"`
+	IDCliente *string `json:"idcliente"`
+	Cliente   *string `json:"cliente"`
+	IP        *string `json:"ip"`
+}
+
+type LineasResult struct {
+	Result      string                `json:"result"`
+	Explication string                `json:"explication"`
+	Lineas      []LineaVerificaciones `json:"lineas"`
+}
 
 func makeFinderConnect(serverAddress string) FinderConnect {
 
@@ -33,6 +50,7 @@ func makeFinderConnect(serverAddress string) FinderConnect {
 		URLgetIp:      serverAddress + defaultPaths["URLgetIp"],
 		URLgetLtm:     serverAddress + defaultPaths["URLgetLtm"],
 		URLgetDisp:    serverAddress + defaultPaths["URLgetDisp"],
+		URLLineas:     serverAddress + defaultPaths["URLLineas"],
 	}
 }
 func GetFinderConnect(serveraddress string) *FinderConnect {
@@ -135,4 +153,20 @@ func (fc *FinderConnect) GetDisp(find string) (Dispositivo, error) {
 		return Dispositivo{}, err
 	}
 	return dispositivo, nil
+}
+
+func (fc *FinderConnect) GetLineas(find string, userowner string) (LineasResult, error) {
+	URL := fmt.Sprintf(fc.URLLineas, find, userowner)
+	result, err := FetchURL(URL)
+	if err != nil {
+		return LineasResult{}, err
+	}
+	fmt.Println("Result:", result)
+	var lineasresult LineasResult
+
+	err = json.Unmarshal([]byte(result), &lineasresult)
+	if err != nil {
+		return LineasResult{}, err
+	}
+	return lineasresult, nil
 }
