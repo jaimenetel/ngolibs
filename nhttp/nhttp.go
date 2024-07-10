@@ -231,7 +231,7 @@ func (lt *Nthttp) AddEndpoint(name string, handler http.HandlerFunc, params ...i
 
 	lt.Endpoints = append(lt.Endpoints, endpoint)
 }
-func (lt *Nthttp) Start() {
+func (lt *Nthttp) StartCustom() {
 	mux := GetCustomMux()
 	for _, endpoint := range lt.Endpoints {
 		fmt.Println("Startr takatiki del endpoint: ", endpoint)
@@ -242,6 +242,34 @@ func (lt *Nthttp) Start() {
 		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.inMethods)
 
 		mux.Handle(endpoint.Name, handlerWithMiddleware)
+
+	}
+}
+func (lt *Nthttp) StartStandard() {
+	mux := GetStandardMux()
+	for _, endpoint := range lt.Endpoints {
+		fmt.Println("Startr takatiki del endpoint: ", endpoint)
+
+		// Envuelve el handler original con los middlewares de auth y log, y luego con el CORS middleware
+		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.Handler, endpoint))
+
+		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.inMethods)
+
+		mux.Handle(endpoint.Name, handlerWithMiddleware)
+
+	}
+}
+func (lt *Nthttp) Start() {
+
+	for _, endpoint := range lt.Endpoints {
+		fmt.Println("Startr takatiki del endpoint: ", endpoint)
+
+		// Envuelve el handler original con los middlewares de auth y log, y luego con el CORS middleware
+		handlerWithMiddleware := corsMiddleware(authMiddlewareRoleLog(endpoint.Handler, endpoint))
+
+		handlerWithMiddleware = ConfigMethodType(handlerWithMiddleware, endpoint.inMethods)
+
+		http.Handle(endpoint.Name, handlerWithMiddleware)
 
 	}
 }

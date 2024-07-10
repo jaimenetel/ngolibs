@@ -24,6 +24,10 @@ func GetCustomMux() *CustomMux {
 	return instancemux
 }
 
+func GetStandardMux() *http.ServeMux {
+	return http.DefaultServeMux
+}
+
 // NewCustomMux crea un nuevo CustomMux
 func __NewCustomMux() *CustomMux {
 	return &CustomMux{
