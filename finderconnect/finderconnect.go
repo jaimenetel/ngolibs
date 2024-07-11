@@ -24,7 +24,7 @@ var (
 		"URLgetIp":   "/findip?find=%s",
 		"URLgetLtm":  "/findltm?find=%s",
 		"URLgetDisp": "/finddispositivo?find=%s",
-		"URLLineas":  "/lineas?imei=%s&userowner",
+		"URLLineas":  "/lineas?imei=%s&userowner=%s",
 	}
 )
 
