@@ -350,7 +350,13 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 				return
 			}
 		}
-		tokenString := strings.TrimSpace(strings.Replace(r.Header.Get("Authorization"), bearer_string, "", -1))
+		tokenString := ""
+		tokenString = r.Header.Get("Authorization")
+
+		if tokenString == "" {
+			tokenString = r.URL.Query().Get("xtoken")
+		}
+		tokenString = strings.TrimSpace(strings.Replace(tokenString, bearer_string, "", -1))
 		if ep.SinRoles {
 			fmt.Println("Sin roles")
 			next.ServeHTTP(w, r)
