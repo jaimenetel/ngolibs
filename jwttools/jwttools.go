@@ -55,7 +55,8 @@ func DecodificarJWT2(tokenString string) (jwt.MapClaims, error) {
 	//secretKeySeed := SUPER_SECRET_KEY
 	//secretKey := hmac.New(sha256.New, []byte(secretKeySeed))
 	// Decodificar el token
-	atoken := strings.Replace(tokenString, "Bearer ", "", -1)
+	atoken := strings.Replace(tokenString, "Bearer", "", -1)
+	atoken = strings.TrimSpace(atoken)
 	token, err := jwt.Parse(atoken, func(token *jwt.Token) (interface{}, error) {
 		// Validar algoritmo
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
