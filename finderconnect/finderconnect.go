@@ -3,9 +3,9 @@ package finderconnect
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"sync"
+
+	ut "github.com/jaimenetel/ngolibs/urltools"
 )
 
 type FinderConnect struct {
@@ -94,30 +94,30 @@ type Dispositivo struct {
 	Cliente _Cliente `json:"cliente,omitempty"`
 }
 
-func FetchURL(url string) (string, error) {
+// func FetchURL(url string) (string, error) {
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("error al hacer la solicitud GET: %v", err)
-	}
-	defer resp.Body.Close()
+// 	resp, err := http.Get(url)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error al hacer la solicitud GET: %v", err)
+// 	}
+// 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("respuesta fallida con código de estado: %d", resp.StatusCode)
-	}
+// 	if resp.StatusCode != http.StatusOK {
+// 		return "", fmt.Errorf("respuesta fallida con código de estado: %d", resp.StatusCode)
+// 	}
 
-	// Lee el cuerpo de la respuesta
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("error al leer el cuerpo de la respuesta: %v", err)
-	}
+// 	// Lee el cuerpo de la respuesta
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error al leer el cuerpo de la respuesta: %v", err)
+// 	}
 
-	return string(body), nil
-}
+// 	return string(body), nil
+// }
 
 func (fc *FinderConnect) GetIp(find string) (string, error) {
 	URL := fmt.Sprintf(fc.URLgetIp, find)
-	result, err := FetchURL(URL)
+	result, err := ut.FetchURL(URL)
 	if err != nil {
 		return "", err
 	}
@@ -126,7 +126,7 @@ func (fc *FinderConnect) GetIp(find string) (string, error) {
 
 func (fc *FinderConnect) GetLTM(find string) ([]Findiccid, error) {
 	URL := fmt.Sprintf(fc.URLgetLtm, find)
-	result, err := FetchURL(URL)
+	result, err := ut.FetchURL(URL)
 	if err != nil {
 		return []Findiccid{}, err
 	}
@@ -141,7 +141,7 @@ func (fc *FinderConnect) GetLTM(find string) ([]Findiccid, error) {
 }
 func (fc *FinderConnect) GetDisp(find string) (Dispositivo, error) {
 	URL := fmt.Sprintf(fc.URLgetDisp, find)
-	result, err := FetchURL(URL)
+	result, err := ut.FetchURL(URL)
 	if err != nil {
 		return Dispositivo{}, err
 	}
@@ -157,7 +157,7 @@ func (fc *FinderConnect) GetDisp(find string) (Dispositivo, error) {
 
 func (fc *FinderConnect) GetLineas(find string, userowner string) (LineasResult, error) {
 	URL := fmt.Sprintf(fc.URLLineas, find, userowner)
-	result, err := FetchURL(URL)
+	result, err := ut.FetchURL(URL)
 	if err != nil {
 		return LineasResult{}, err
 	}
