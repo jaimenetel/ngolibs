@@ -16,11 +16,23 @@ const (
 	URLBeta  = "https://beta.liftel.es:8443/verif"
 )
 
+type VerificacionesUser struct {
+	Security    string `json:"security"`
+	Usuario     string `json:"usuario"`
+	IDEmpresa   int    `json:"idempresa"`
+	Rol         int    `json:"rol"`
+	TipoCliente string `json:"tipocliente"`
+	Idioma      string `json:"idioma"`
+	Token       string `json:"token"`
+	Ce          int    `json:"ce"`
+	AppToken    string `json:"apptoken"`
+}
 type TokenItem struct {
 	Token       string `json:"token"`
 	ValidoHasta string `json:"validohasta"`
 	User        string `json:"user"`
-	Password    string `json:"password"`
+	//Password    string `json:"password"`
+	Vusuario VerificacionesUser `json:"vusuario"`
 }
 type VrfloginConnector struct {
 	ServerAddress string
