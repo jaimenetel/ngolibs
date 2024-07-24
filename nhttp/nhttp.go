@@ -305,12 +305,16 @@ func corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 func CheckStringSliceInTemas(slice []string, temas TinTemas) (bool, string) {
+	fmt.Println("CheckStringSliceInTemas")
 	for _, s := range slice {
+		fmt.Println("Buscando:", s)
 		_, found := temas[s]
 		if found {
+			fmt.Println("Encontrado:", s)
 			return true, s
 		}
 	}
+	fmt.Println("No encontrado")
 	return false, ""
 }
 func CheckAPIKey(r *http.Request) bool {
@@ -383,7 +387,9 @@ func authMiddlewareRoleLog(next http.Handler, ep Endpoint) http.Handler {
 			//role := logrequest.Claims["role"].(string)
 			role := myClaims["role"].(string)
 			roles := strings.Split(role, ",")
-			fmt.Println("Roles: ", role)
+			fmt.Println("Roles: ", roles)
+			fmt.Println("Roles en el endpoint: ", ep.inRoles)
+			fmt.Println("inAntiRoles en el endpoint: ", ep.inAntiRoles)
 			pongoRoles, cualpone := CheckStringSliceInTemas(roles, ep.inRoles)
 			quitoRoles, cualquita := CheckStringSliceInTemas(roles, ep.inAntiRoles)
 			if quitoRoles {
