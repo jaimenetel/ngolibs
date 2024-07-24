@@ -14,6 +14,7 @@ type FinderConnect struct {
 	URLgetLtm     string
 	URLgetDisp    string
 	URLLineas     string
+	URLIsMine     string
 }
 
 var (
@@ -25,6 +26,7 @@ var (
 		"URLgetLtm":  "/findltm?find=%s",
 		"URLgetDisp": "/finddispositivo?find=%s",
 		"URLLineas":  "/lineas?imei=%s&userowner=%s",
+		"URLIsMine":  "/lineas?imei=%s&phone=%s&iccid=%d&userowner=%s",
 	}
 )
 
@@ -51,6 +53,7 @@ func makeFinderConnect(serverAddress string) FinderConnect {
 		URLgetLtm:     serverAddress + defaultPaths["URLgetLtm"],
 		URLgetDisp:    serverAddress + defaultPaths["URLgetDisp"],
 		URLLineas:     serverAddress + defaultPaths["URLLineas"],
+		URLIsMine:     serverAddress + defaultPaths["URLIsMine"],
 	}
 }
 func GetFinderConnect(serveraddress string) *FinderConnect {
@@ -169,4 +172,19 @@ func (fc *FinderConnect) GetLineas(find string, userowner string) (LineasResult,
 		return LineasResult{}, err
 	}
 	return lineasresult, nil
+}
+
+func (fc *FinderConnect) IsMine(imei, phone, iccid string, userowner string) (bool, error) {
+	URL := fmt.Sprintf(fc.URLIsMine, imei, phone, iccid, userowner)
+	result, err := ut.FetchURL(URL)
+	if err != nil {
+		return false, err
+	}
+	var lineasresult LineasResult
+
+	err = json.Unmarshal([]byte(result), &lineasresult)
+	if err != nil {
+		return false, err
+	}
+	return lineasresult.Result == "Ok", nil
 }
