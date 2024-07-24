@@ -8,6 +8,12 @@ import (
 	ut "github.com/jaimenetel/ngolibs/urltools"
 )
 
+const (
+	URLIot   = "https://iot.liftel.es:8443/find"
+	URLLocal = "http://localhost:8701"
+	URLBeta  = "https://beta.liftel.es:8443/find"
+)
+
 type FinderConnect struct {
 	ServerAddress string
 	URLgetIp      string
@@ -20,7 +26,7 @@ type FinderConnect struct {
 var (
 	fcinstance   *FinderConnect
 	fconce       sync.Once
-	defaultURL   = "http://172.17.0.56:8701"
+	defaultURL   = URLIot
 	defaultPaths = map[string]string{
 		"URLgetIp":   "/findip?find=%s",
 		"URLgetLtm":  "/findltm?find=%s",
@@ -56,11 +62,15 @@ func makeFinderConnect(serverAddress string) FinderConnect {
 		URLIsMine:     serverAddress + defaultPaths["URLIsMine"],
 	}
 }
-func GetFinderConnect(serveraddress string) *FinderConnect {
+func GetFinderConnect(serveraddress ...string) *FinderConnect {
 	fconce.Do(func() {
-		unaurl := defaultURL
-		if serveraddress != "" {
-			unaurl = serveraddress
+		unaurl := ""
+		if serveraddress == nil {
+			serveraddress = []string{URLIot}
+		}
+
+		if serveraddress[0] != "" {
+			unaurl = serveraddress[0]
 
 		}
 		apalo := makeFinderConnect(unaurl)

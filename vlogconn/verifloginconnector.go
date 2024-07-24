@@ -58,7 +58,7 @@ func makeVerifConnect(serverAddress string) VrfloginConnector {
 
 func GetVerifConnect(serveraddress ...string) *VrfloginConnector {
 	if serveraddress == nil {
-		serveraddress = []string{URLBeta}
+		serveraddress = []string{URLIot}
 	}
 	vlconce.Do(func() {
 		unaurl := defaultURL
