@@ -4,16 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
 	"sync"
+
+	ut "github.com/jaimenetel/ngolibs/urltools"
 )
 
 const (
 	// URLBase is the base URL for the API
-	URLIot  = "https://iot.liftel.es:8443/verif/executeurl"
-	URLBeta = "https://beta.liftel.es:8443/verif/executeurl"
+	URLIot   = "https://iot.liftel.es:8443/verif/executeurl"
+	URLBeta  = "https://beta.liftel.es:8443/verif/executeurl"
 	URLLocal = "http://localhost:8703/executeurl"
 )
 
@@ -99,7 +98,7 @@ func GetUrl(urlbase string, prmList ...interface{}) string {
 func (uc *UrlCaller) CallUrl(url string, params ...interface{}) string {
 	abody := GetUrl(url, params...)
 	fmt.Println(abody)
-	salida, err := _FetchURLPost(context.Background(), uc.UrlExecuter, abody, "application/json")
+	salida, err := ut.FetchURLPostCtx(context.Background(), uc.UrlExecuter, abody, "application/json")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -108,33 +107,33 @@ func (uc *UrlCaller) CallUrl(url string, params ...interface{}) string {
 
 }
 
-func _FetchURLPost(ctx context.Context, url string, body string, contentType string) (string, error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(body))
-	if err != nil {
-		return "", fmt.Errorf("error al crear la solicitud POST: %v", err)
-	}
+// func _FetchURLPost(ctx context.Context, url string, body string, contentType string) (string, error) {
+// 	req, err := http.NewRequestWithContext(ctx, "POST", url, strings.NewReader(body))
+// 	if err != nil {
+// 		return "", fmt.Errorf("error al crear la solicitud POST: %v", err)
+// 	}
 
-	// Set the Content-Type header
-	req.Header.Set("Content-Type", contentType)
+// 	// Set the Content-Type header
+// 	req.Header.Set("Content-Type", contentType)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("error al hacer la solicitud POST: %v", err)
-	}
-	defer resp.Body.Close()
+// 	client := &http.Client{}
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error al hacer la solicitud POST: %v", err)
+// 	}
+// 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("respuesta fallida con código de estado: %d", resp.StatusCode)
-	}
+// 	if resp.StatusCode != http.StatusOK {
+// 		return "", fmt.Errorf("respuesta fallida con código de estado: %d", resp.StatusCode)
+// 	}
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("error al leer el cuerpo de la respuesta: %v", err)
-	}
+// 	responseBody, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return "", fmt.Errorf("error al leer el cuerpo de la respuesta: %v", err)
+// 	}
 
-	return string(responseBody), nil
-}
+//		return string(responseBody), nil
+//	}
 func ReformatJSON(s string) string {
 	var f interface{}
 	err := json.Unmarshal([]byte(s), &f)
