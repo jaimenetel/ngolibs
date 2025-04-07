@@ -32,7 +32,7 @@ var (
 		"URLgetLtm":  "/findltm?find=%s",
 		"URLgetDisp": "/finddispositivo?find=%s",
 		"URLLineas":  "/lineas?imei=%s&userowner=%s",
-		"URLIsMine":  "/lineas?imei=%s&phone=%s&iccid=%d&userowner=%s",
+		"URLIsMine":  "/lineas?imei=%s&phone=%s&iccid=%s&userowner=%s",
 	}
 )
 
